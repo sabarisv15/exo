@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🔭 Exoplanet Classifier – Run EXORC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://pyscript.net/releases/2025.8.1/core.css">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="https://pyscript.net/releases/2025.8.1/core.js"></script>
+</head>
+
+<body>
+  <h1>🪐 Run EXORC (AI model)</h1>
+  <div class="main-content">
+    <div class="controls">
+      <div class="koi_inputs">
+        <input type="number" id="koi_period" step="0.01" placeholder="Enter the koi_period" value="" />
+        <input type="number" id="koi_time0bk" step="0.01" placeholder="Enter the koi_time0bk" value="" />
+        <input type="number" id="koi_duration" step="0.01" placeholder="Enter the koi_duration" value="" />
+        <input type="number" id="koi_depth" step="0.01" placeholder="Enter the koi_depth" value="" />
+        <input type="number" id="koi_prad" step="0.01" placeholder="Enter the koi_prad" value="" />
+        <input type="number" id="koi_snr" step="0.01" placeholder="Enter the koi_snr" value="" />
+        <input type="number" id="koi_steff" step="0.01" placeholder="Enter the koi_steff" value="" />
+        <input type="number" id="koi_srad" step="0.01" placeholder="Enter the koi_srad" value="" />
+        <input type="number" id="koi_smass" step="0.01" placeholder="Enter the koi_smass" value="" />
+        <input type="number" id="koi_kepmag" step="0.01" placeholder="Enter the koi_kepmag" value="" />
+        <div id="error-message"></div>
+      </div>
+      <button id="runNotebook" class="run-btn">🚀 Execute</button>
+    </div>
+
+    <div id="output">
+      🔹 Output will appear here...
+    </div>
+  </div>
+  <script type="module">
+    import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.mjs";
+    const output = document.getElementById("output");
+    const runBtn = document.getElementById("runNotebook");
+    const errorBox = document.getElementById("error-message");
+    let pyodide;
+
+    function log(txt) {
+      const safeText = txt
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
+        output.innerHTML += safeText + "<br>";
+
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function validateInputs() {
+      const fields = [
+        "koi_period", "koi_time0bk", "koi_duration", "koi_depth",
+        "koi_prad", "koi_snr", "koi_steff", "koi_srad", "koi_smass", "koi_kepmag"
+      ];
+      for (let id of fields) {
+        const val = document.getElementById(id).value;
+        if (val === "" || isNaN(val)) {
+          errorBox.textContent = `⚠️ Please enter a valid value for ${id.replace("koi_", "KOI ")}.`;
+          return false;
+        }
+      }
+      errorBox.textContent = "";
+      return true;
+    }
+
+    async function initPyodide() {
+      log("⏳ Loading packages...");
+      pyodide = await loadPyodide({ 
+        stdout: log, 
+        stderr: log,
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/",
+        packages: ["pandas", "scikit-learn", "micropip"],
+        cache: true
+       });
+      await pyodide.loadPackage(["pandas", "scikit-learn", "micropip"]);
+      await pyodide.runPythonAsync(`
+        import micropip
+        await micropip.install("seaborn")
+        import matplotlib
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
+      `);
+      log("✅ AI Model Packages are ready!\n");
+    }
+
+    async function loadNotebook() {
+      const response = await fetch("EXO Project.ipynb");
+      if (!response.ok) throw new Error("❌ Notebook not found!");
+      const nb = await response.json();
+      const codeCells = nb.cells
+        .filter(c => c.cell_type === "code")
+        .map(c => c.source.join(""));
+      //log(`📖 Loaded ${codeCells.length} code cells.`);
+      return codeCells;
+    }
+
+    async function ensureDataset() {
+      if (pyodide.FS.analyzePath("cumulativefiltered.csv").exists) return;
+      log("📂 Loading AI model dataset...");
+      const resp = await fetch("cumulativefiltered.csv");
+      const data = new Uint8Array(await resp.arrayBuffer());
+      pyodide.FS.writeFile("cumulativefiltered.csv", data);
+      log("✅ Dataset ready in virtual system.\n");
+    }
+
+    async function runNotebook() {
+      if (!validateInputs()) return;
+      runBtn.disabled = true;
+      if (!pyodide) await initPyodide(); else output.innerHTML = "🔹 Output reinitiated...";
+      await ensureDataset();
+      const ids = [
+        "koi_period","koi_time0bk","koi_duration","koi_depth","koi_prad",
+        "koi_snr","koi_steff","koi_srad","koi_smass","koi_kepmag"
+      ];
+      for (let id of ids) {
+        pyodide.globals.set(id, parseFloat(document.getElementById(id).value));
+      }
+      try {
+        const cells = await loadNotebook();
+        for (let i = 0; i < cells.length; i++) {
+          log(`\n>>> Running Cell ${i + 1}...`);
+          try {
+            const result = await pyodide.runPythonAsync(cells[i]);
+            if (result) {
+              console.log(result)
+              if (typeof result === "string") {
+                log(result);
+              } else if (result.to_html) {
+                // dataframe-like
+                const html = await pyodide.runPythonAsync("df3.head(5).to_html()");
+                output.innerHTML += html;
+              }
+            }
+          } catch (err) {
+            log("❌ " + err);
+          }
+        }
+        log("\n🎉 EXO Execution completed!");
+      } catch (err) {
+        log("❌ " + err.message);
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    runBtn.onclick = runNotebook;
+  </script>
+</body>
+</html>

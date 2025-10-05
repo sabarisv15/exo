@@ -168,4 +168,4 @@ Anyone with the link can run the classifier live — no setup required!
 ---
 
 ## 🪐 License
-This project is released under the [MIT License](LICENSE).
+This project is released under the [MIT License](https://opensource.org/license/mit).

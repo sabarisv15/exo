@@ -2,10 +2,10 @@
 
 > **An AI-powered Exoplanet Classification System using NASA Kepler Dataset + Random Forest + Pyodide Frontend**
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
-![Pyodide](https://pyodide.org/en/stable/)
-![Live server extension VSCode](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
-![Ngrok](https://ngrok.com/)
+![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
+![Pyodide](https://img.shields.io/badge/Pyodide-0.24.1-008080?logo=python&logoColor=white)
+![VSCode Live Server](https://img.shields.io/badge/Live%20Server%20Extension-VSCode-0078D7?logo=visualstudiocode&logoColor=white)
+![Ngrok](https://img.shields.io/badge/Ngrok-Tunnel%20Service-FF69B4?logo=ngrok&logoColor=white)
 
 ---
 

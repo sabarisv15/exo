@@ -77,11 +77,11 @@ Built on NASA’s **Kepler cumulative exoplanet dataset**, this project combines
 
 ## 🌐 Web App with Pyodide + Ngrok
 
-### Step 1: Start Local Server
+### Step 1: Install VSCode Extension for Separate PORT
 Install Live server extension in VSCode:
 
 
-### Step 2: Expose It Using Ngrok
+### Step 2: Start Local Server
 Right click index.html file and click on Open with live server option.
 
 ### Step 3: Expose It Using Ngrok
